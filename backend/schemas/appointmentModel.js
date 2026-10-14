@@ -4,7 +4,7 @@ const appointmentModel = mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",
+      ref: "user",
       required: true,
     },
     doctorId: {
@@ -29,10 +29,27 @@ const appointmentModel = mongoose.Schema(
     document: {
       type: Object,
     },
+    // pending | approved | rejected | cancelled | completed
     status: {
       type: String,
-      require: true,
+      required: true,
       default: "pending",
+    },
+    cancelReason: {
+      type: String,
+      default: "",
+    },
+    visitSummary: {
+      type: String,
+      default: "",
+    },
+    prescription: {
+      type: String,
+      default: "",
+    },
+    reminderSent: {
+      type: Boolean,
+      default: false,
     },
   },
   {

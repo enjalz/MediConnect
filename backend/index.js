@@ -3,9 +3,11 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 const connectToDB = require("./config/connectToDB");
+const startReminderJob = require("./utils/reminderJob");
 
 dotenv.config();
 connectToDB();
+startReminderJob();
 
 const app = express();
 const PORT = process.env.PORT || 8001;

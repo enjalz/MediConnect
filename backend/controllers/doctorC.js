@@ -28,15 +28,18 @@ const updateDoctorProfileController = async (req, res) => {
 const getAllDoctorAppointmentsController = async (req, res) => {
   try {
     const doctor = await docSchema.findOne({ userId: req.body.userId });
+    if (!doctor) {
+      return res.status(404).send({ message: "Doctor profile not found", success: false });
+    }
 
-    const allApointments = await appointmentSchema.find({
+    const allAppointments = await appointmentSchema.find({
       doctorId: doctor._id,
     });
 
     return res.status(200).send({
       message: "All the appointments are listed below.",
       success: true,
-      data: allApointments,
+      data: allAppointments,
     });
   } catch (error) {
     console.log(error);
@@ -131,9 +134,60 @@ const documentDownloadController = async (req, res) => {
   }
 };
 
+////doctor adds visit summary & prescription, marks appointment completed
+const addVisitSummaryController = async (req, res) => {
+  try {
+    const { appointmentId, visitSummary, prescription } = req.body;
+
+    if (!visitSummary) {
+      return res.status(400).send({ message: "Visit summary is required", success: false });
+    }
+
+    const doctor = await docSchema.findOne({ userId: req.body.userId });
+    const appointment = await appointmentSchema.findById(appointmentId);
+
+    if (!doctor || !appointment) {
+      return res.status(404).send({ message: "Not found", success: false });
+    }
+    if (appointment.doctorId.toString() !== doctor._id.toString()) {
+      return res.status(403).send({ message: "Not allowed", success: false });
+    }
+    if (appointment.status !== "approved") {
+      return res.status(400).send({
+        message: "Only approved appointments can be completed",
+        success: false,
+      });
+    }
+
+    appointment.visitSummary = visitSummary;
+    appointment.prescription = prescription || "";
+    appointment.status = "completed";
+    await appointment.save();
+
+    const patient = await userSchema.findById(appointment.userId);
+    if (patient) {
+      patient.notification.push({
+        type: "visit-summary",
+        message: `Dr. ${doctor.fullName} added your visit summary for ${appointment.date}`,
+      });
+      await patient.save();
+    }
+
+    return res.status(200).send({
+      message: "Visit summary saved, appointment completed",
+      success: true,
+      data: appointment,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "something went wrong", success: false });
+  }
+};
+
 module.exports = {
   updateDoctorProfileController,
   getAllDoctorAppointmentsController,
   handleStatusController,
   documentDownloadController,
+  addVisitSummaryController,
 };

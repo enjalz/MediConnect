@@ -12,7 +12,8 @@ const {
   appointmentController,
   getAllUserAppointments,
   getDocsController,
-  downloadDocController,
+  cancelAppointmentController,
+  rescheduleAppointmentController,
 } = require("../controllers/userC");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -48,5 +49,8 @@ router.get("/getuserappointments", authMiddleware, getAllUserAppointments);
 
 router.get("/getDocsforuser", authMiddleware, getDocsController)
 
+router.post("/cancelappointment", authMiddleware, cancelAppointmentController);
+
+router.post("/rescheduleappointment", authMiddleware, rescheduleAppointmentController);
 
 module.exports = router;

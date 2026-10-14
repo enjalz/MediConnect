@@ -6,6 +6,7 @@ const fs = require("fs");
 const userSchema = require("../schemas/userModel");
 const docSchema = require("../schemas/docModel");
 const appointmentSchema = require("../schemas/appointmentModel");
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 
 /// for registering the user
@@ -191,19 +192,31 @@ const deleteallnotificationController = async (req, res) => {
 };
 
 ////displaying all doctors in user profile
+////displaying all approved doctors (with search & filter)
 const getAllDoctorsControllers = async (req, res) => {
   try {
-    const docUsers = await docSchema.find({ status: "approved" });
+    const { specialization, search } = req.query;
+    const filter = { status: "approved" };
+
+    if (specialization) {
+      filter.specialization = { $regex: escapeRegex(specialization), $options: "i" };
+    }
+    if (search) {
+      const keyword = { $regex: escapeRegex(search), $options: "i" };
+      filter.$or = [{ fullName: keyword }, { address: keyword }];
+    }
+
+    const docUsers = await docSchema.find(filter);
     return res.status(200).send({
       message: "doctor Users data list",
       success: true,
       data: docUsers,
     });
   } catch (error) {
-    console
-      .log(error)
+    console.log(error);
+    return res
       .status(500)
-      .send({ message: "something went wrong", success: false, error });
+      .send({ message: "something went wrong", success: false });
   }
 };
 
@@ -319,7 +332,97 @@ const getDocsController = async (req, res) => {
   }
 };
 
+////cancel appointment by patient
+const cancelAppointmentController = async (req, res) => {
+  try {
+    const { appointmentId, reason } = req.body;
+    const appointment = await appointmentSchema.findById(appointmentId);
 
+    if (!appointment) {
+      return res.status(404).send({ message: "Appointment not found", success: false });
+    }
+    if (appointment.userId.toString() !== req.body.userId) {
+      return res.status(403).send({ message: "Not allowed", success: false });
+    }
+    if (["cancelled", "completed", "rejected"].includes(appointment.status)) {
+      return res.status(400).send({
+        message: `Appointment is already ${appointment.status}`,
+        success: false,
+      });
+    }
+
+    appointment.status = "cancelled";
+    appointment.cancelReason = reason || "";
+    await appointment.save();
+
+    const doctorUser = await userSchema.findById(appointment.doctorInfo.userId);
+    if (doctorUser) {
+      doctorUser.notification.push({
+        type: "appointment-cancelled",
+        message: `${appointment.userInfo.fullName} cancelled the appointment on ${appointment.date}`,
+      });
+      await doctorUser.save();
+    }
+
+    return res.status(200).send({
+      message: "Appointment cancelled successfully",
+      success: true,
+      data: appointment,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "something went wrong", success: false });
+  }
+};
+
+////reschedule appointment by patient
+const rescheduleAppointmentController = async (req, res) => {
+  try {
+    const { appointmentId, newDate } = req.body;
+
+    if (!newDate) {
+      return res.status(400).send({ message: "New date is required", success: false });
+    }
+
+    const appointment = await appointmentSchema.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).send({ message: "Appointment not found", success: false });
+    }
+    if (appointment.userId.toString() !== req.body.userId) {
+      return res.status(403).send({ message: "Not allowed", success: false });
+    }
+    if (!["pending", "approved"].includes(appointment.status)) {
+      return res.status(400).send({
+        message: `Cannot reschedule a ${appointment.status} appointment`,
+        success: false,
+      });
+    }
+
+    const oldDate = appointment.date;
+    appointment.date = newDate;
+    appointment.status = "pending"; // dokter harus approve ulang
+    appointment.reminderSent = false;
+    await appointment.save();
+
+    const doctorUser = await userSchema.findById(appointment.doctorInfo.userId);
+    if (doctorUser) {
+      doctorUser.notification.push({
+        type: "appointment-rescheduled",
+        message: `${appointment.userInfo.fullName} rescheduled from ${oldDate} to ${newDate}`,
+      });
+      await doctorUser.save();
+    }
+
+    return res.status(200).send({
+      message: "Appointment rescheduled, waiting for doctor approval",
+      success: true,
+      data: appointment,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "something went wrong", success: false });
+  }
+};
 
 module.exports = {
   registerController,
@@ -332,4 +435,6 @@ module.exports = {
   appointmentController,
   getAllUserAppointments,
   getDocsController,
+  cancelAppointmentController,
+  rescheduleAppointmentController,
 };
