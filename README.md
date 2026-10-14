@@ -137,20 +137,6 @@ Authorization: Bearer <token>
 
 ---
 
-## Screenshots
-
-<!-- Add screenshots here, e.g.:
-![Landing Page](screenshots/landing.png)
-![Patient Dashboard](screenshots/user-dashboard.png)
-![Admin Panel](screenshots/admin.png)
--->
-
-## Demo Video
-
-<!-- Paste your demo video link here -->
-
----
-
 ## Future Enhancements
 - Email and SMS reminders
 - Time-slot booking based on doctor availability
