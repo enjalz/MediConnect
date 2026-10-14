@@ -50,7 +50,10 @@ const DoctorList = ({ userDoctorId, doctor, userdata }) => {
          
          if (res.data.success) {
             message.success(res.data.message)
-         }
+            handleClose()          // tutup popup
+            setDateTime('')        // kosongkan tanggal
+            setDocumentFile(null)  // kosongkan file
+            }
          else {
             message.error(res.data.success)
          }
