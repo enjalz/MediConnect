@@ -81,6 +81,7 @@ const getStatusRejectController = async (req, res) => {
       onClickPath: "/notification",
     });
 
+    user.isdoctor = false;
     await user.save();
     await doctor.save();
 

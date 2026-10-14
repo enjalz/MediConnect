@@ -34,7 +34,7 @@ function ApplyDoctor({ userId }) {
             message.success(res.data.message)
          }
          else {
-            message.error(res.data.success)
+            message.error(res.data.message)
          }
       } catch (error) {
          console.log(error)

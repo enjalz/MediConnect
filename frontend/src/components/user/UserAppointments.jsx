@@ -145,10 +145,12 @@ const UserAppointments = () => {
         params: { appointId: appointment._id },
         responseType: 'blob',
       });
-      const fileUrl = window.URL.createObjectURL(new Blob([res.data]));
+      const fileUrl = window.URL.createObjectURL(
+        new Blob([res.data], { type: appointment.document.mimetype || res.data.type })
+      );
       const link = document.createElement('a');
       link.href = fileUrl;
-      link.setAttribute('download', appointment.document.filename);
+            link.setAttribute('download', appointment.document.originalname || appointment.document.filename);
       document.body.appendChild(link);
       link.click();
       link.remove();

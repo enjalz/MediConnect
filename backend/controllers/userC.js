@@ -98,6 +98,21 @@ const docController = async (req, res) => {
   try {
     const { doctor, userId } = req.body;
 
+        // Prevent duplicate applications
+    const existing = await docSchema.findOne({
+      userId,
+      status: { $in: ["pending", "approved"] },
+    });
+    if (existing) {
+      return res.status(200).send({
+        success: false,
+        message:
+          existing.status === "approved"
+            ? "You are already registered as a doctor"
+            : "You already have a pending application",
+      });
+    }
+
     const newDoctor = new docSchema({
       ...doctor,
       userId: userId.toString(),
@@ -231,6 +246,8 @@ const appointmentController = async (req, res) => {
     if (req.file) {
       documentData = {
         filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
         path: `/uploads/${req.file.filename}`,
       };
     }

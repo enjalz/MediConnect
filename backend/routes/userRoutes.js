@@ -1,4 +1,5 @@
 const multer = require("multer");
+const path = require("path");
 const express = require("express");
 
 const {
@@ -19,7 +20,15 @@ const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-const upload = multer({ dest: 'uploads/' })
+// Keep the original file extension so documents can be opened after download
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`);
+  },
+});
+const upload = multer({ storage });
 
 router.post("/register", registerController);
 
