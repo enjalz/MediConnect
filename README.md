@@ -120,6 +120,12 @@ The app opens at **http://localhost:3000**.
 
 ---
 
+## Demo Video
+
+URL Link: https://youtu.be/owuJW7ktyHw
+
+---
+
 ## API Overview
 
 Base URL: `http://localhost:8001/api`
